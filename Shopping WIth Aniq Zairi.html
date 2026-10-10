@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopping with Aniq Zairi at IOI City Mall</title>
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #27ae60;
+      --bg: #f4f7f6;
+      --highlight: #f1c40f;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      background-color: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      margin: 0 0 5px 0;
+      font-size: 1.8rem;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .game-board-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(8, 72px);
+      grid-template-rows: repeat(8, 72px);
+      gap: 4px;
+      background-color: #bdc3c7;
+      padding: 4px;
+      border-radius: 6px;
+      position: relative;
+    }
+
+    .cell {
+      background-color: #fff;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px;
+      font-size: 0.7rem;
+      position: relative;
+      text-align: center;
+      box-sizing: border-box;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s, border 0.2s;
+    }
+
+    .cell:hover {
+      transform: scale(1.02);
+    }
+
+    .cell .cell-num {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-weight: bold;
+      color: #7f8c8d;
+      font-size: 0.65rem;
+    }
+
+    .cell .item-icon {
+      font-size: 1.6rem;
+      margin-top: 10px;
+    }
+
+    .cell .item-name {
+      font-size: 0.6rem;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .cell.start { background-color: #d4edda; border: 2px solid #28a745; }
+    .cell.end { background-color: #f8d7da; border: 2px solid #dc3545; }
+
+    /* Highlight valid movement squares */
+    .cell.valid-move {
+      border: 3px dashed var(--highlight) !important;
+      background-color: #fffde7;
+    }
+
+    .cell.valid-move::after {
+      content: "•";
+      font-size: 2rem;
+      color: #f39c12;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.6;
+    }
+
+    .cell.visited {
+      opacity: 0.7;
+    }
+
+    .player {
+      width: 30px;
+      height: 30px;
+      background-color: #e74c3c;
+      border: 2px solid white;
+      border-radius: 50%;
+      position: absolute;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+      transition: all 0.25s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 0.8rem;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .panel {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      border-bottom: 2px solid var(--bg);
+      padding-bottom: 8px;
+      color: var(--primary);
+    }
+
+    .instruction-box {
+      background-color: #e8f4f8;
+      border-left: 4px solid #3498db;
+      padding: 12px;
+      font-size: 0.85rem;
+      margin-bottom: 15px;
+      line-height: 1.4;
+    }
+
+    button {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+    }
+
+    button:hover { background-color: #c0392b; }
+
+    .stats {
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: bold;
+      color: white;
+    }
+
+    .badge.cat1 { background: #3498db; }
+    .badge.cat2 { background: #9b59b6; }
+    .badge.cat3 { background: #e84393; }
+    .badge.cat4 { background: #00cec9; }
+    .badge.cat5 { background: #e67e22; }
+    .badge.cat6 { background: #2ecc71; }
+    .badge.cat7 { background: #f1c40f; color: #333; }
+    .badge.cat8 { background: #34495e; }
+    .badge.cat9 { background: #d63031; }
+
+    ul.cart-list {
+      list-style: none;
+      padding: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      margin: 0;
+    }
+
+    ul.cart-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .target-checklist {
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .target-checklist div.done {
+      text-decoration: line-through;
+      color: #27ae60;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Shopping with Aniq Zairi at IOI City Mall</h1>
+    <p>Plan Aniq Zairi's spending strategically !! Click on the nearby verified square to move.</p>
+  </header>
+
+  <div class="game-board-container">
+    <div class="instruction-box">
+      You have been tasked with planning the spending for Aniq Zairi, who has RM1,000 to spend today on 10 items across designated categories. Happy shopping with Aniq Zairi!
+    </div>
+
+    <div class="grid-container" id="gridBoard">
+      <!-- 8x8 Grid dynamically generated by JavaScript -->
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="panel">
+      <h2>Shopping Mission (Max RM1,000)</h2>
+      <div class="stats">
+        <div>Remaining Balance: <strong id="budget">RM1000</strong> / RM1000</div>
+        <div>Total Items Collected: <strong id="itemCount">0</strong></div>
+      </div>
+      <hr>
+      <h3>Category Checklist:</h3>
+      <div class="target-checklist" id="targetChecklist"></div>
+      <br>
+      <button onclick="resetGame()">Reset Game</button>
+    </div>
+
+    <div class="panel">
+      <h2>Aniq Zairi's Cart</h2>
+      <ul class="cart-list" id="cartList">
+        <li style="color:#999; text-align:center;">No items purchased yet.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  const categories = {
+    1: { name: "Electronics & Tech", price: 300, class: "cat1" },
+    2: { name: "Clothing & Accessories", price: 50, class: "cat2" },
+    3: { name: "Cosmetics & Beauty", price: 70, class: "cat3" },
+    4: { name: "Personal Care", price: 20, class: "cat4" },
+    5: { name: "Food & Drinks", price: 30, class: "cat5" },
+    6: { name: "Fresh Food & Groceries", price: 30, class: "cat6" },
+    7: { name: "Stationery & Study", price: 50, class: "cat7" },
+    8: { name: "Home & Household", price: 70, class: "cat8" },
+    9: { name: "Pet Supplies", price: 60, class: "cat9" }
+  };
+
+  const targetRequirements = {
+    1: { req: 2, current: 0 },
+    2: { req: 3, current: 0 },
+    3: { req: 1, current: 0 },
+    5: { req: 1, current: 0 },
+    6: { req: 1, current: 0 },
+    7: { req: 1, current: 0 },
+    8: { req: 1, current: 0 }
+  };
+
+  const itemsData = [
+    { name: "Start", cat: 0, icon: "🚩" },
+    { name: "Laptop", cat: 1, icon: "💻" },
+    { name: "Earbuds", cat: 1, icon: "🎧" },
+    { name: "Smartwatch", cat: 1, icon: "⌚" },
+    { name: "Sneakers", cat: 2, icon: "👟" },
+    { name: "Backpack", cat: 2, icon: "🎒" },
+    { name: "Handbag", cat: 2, icon: "👜" },
+    { name: "Sunglasses", cat: 2, icon: "🕶️" },
+
+    { name: "T-Shirt", cat: 2, icon: "👕" },
+    { name: "Jeans", cat: 2, icon: "👖" },
+    { name: "Hoodie", cat: 2, icon: "🧥" },
+    { name: "Jacket", cat: 2, icon: "⬛" },
+    { name: "Dress", cat: 2, icon: "👗" },
+    { name: "High Heels", cat: 2, icon: "👠" },
+    { name: "Perfume", cat: 3, icon: "🧴" },
+    { name: "SK-II Care", cat: 3, icon: "🍾" },
+
+    { name: "Foundation", cat: 3, icon: "🧴" },
+    { name: "Lipstick", cat: 3, icon: "💄" },
+    { name: "Mascara", cat: 3, icon: "👁" },
+    { name: "Palette", cat: 3, icon: "🎨" },
+    { name: "Facial Wash", cat: 4, icon: "🧼" },
+    { name: "Toothbrush", cat: 4, icon: "🪥" },
+    { name: "Toothpaste", cat: 4, icon: "🪥" },
+    { name: "Deodorant", cat: 4, icon: "🧴" },
+
+    { name: "Lay's Chips", cat: 5, icon: "🥔" },
+    { name: "KitKat", cat: 5, icon: "🍫" },
+    { name: "Mi Goreng", cat: 5, icon: "🍜" },
+    { name: "Coca-Cola", cat: 5, icon: "🥤" },
+    { name: "Boba Tea", cat: 5, icon: "🧋" },
+    { name: "Dutch Lady", cat: 5, icon: "🥛" },
+    { name: "Nescafe", cat: 5, icon: "☕" },
+    { name: "Milo", cat: 5, icon: "🧃" },
+
+    { name: "Eggs", cat: 6, icon: "🥚" },
+    { name: "Meat", cat: 6, icon: "🥩" },
+    { name: "Chicken", cat: 6, icon: "🍗" },
+    { name: "Fish", cat: 6, icon: "🐟" },
+    { name: "Bananas", cat: 6, icon: "🍌" },
+    { name: "Vegetables", cat: 6, icon: "🥦" },
+    { name: "Bread", cat: 6, icon: "🍞" },
+    { name: "Milk", cat: 6, icon: "🥛" },
+
+    { name: "Water Bottle", cat: 8, icon: "🧴" },
+    { name: "Thermos", cat: 8, icon: "🥤" },
+    { name: "Umbrella", cat: 8, icon: "☂️" },
+    { name: "Watch", cat: 2, icon: "⌚" },
+    { name: "Cap", cat: 2, icon: "🧢" },
+    { name: "Belt", cat: 2, icon: "👖" },
+    { name: "Socks", cat: 2, icon: "🧦" },
+    { name: "Underwear", cat: 2, icon: "🩲" },
+
+    { name: "Notebook", cat: 7, icon: "📘" },
+    { name: "Pen", cat: 7, icon: "🖊️" },
+    { name: "Pencil Case", cat: 7, icon: "👝" },
+    { name: "Calculator", cat: 7, icon: "🔢" },
+    { name: "Sticky Notes", cat: 7, icon: "📝" },
+    { name: "Power Bank", cat: 1, icon: "🔋" },
+    { name: "External Drive", cat: 1, icon: "📱" },
+    { name: "SD Card", cat: 1, icon: "💾" },
+
+    { name: "Cat Food", cat: 9, icon: "🐱" },
+    { name: "Pet Bowl", cat: 9, icon: "🥣" },
+    { name: "Pet Toy", cat: 9, icon: "🧶" },
+    { name: "Plant", cat: 8, icon: "🪴" },
+    { name: "Chair", cat: 8, icon: "🪑" },
+    { name: "Air Fryer", cat: 8, icon: "🍳" },
+    { name: "Frying Pan", cat: 8, icon: "🍳" },
+    { name: "End", cat: 0, icon: "🏠" }
+  ];
+
+  let currentPos = 0;
+  let remainingBudget = 1000;
+  let purchasedItems = [];
+  let visitedCells = new Set([0]);
+
+  function initBoard() {
+    const board = document.getElementById('gridBoard');
+    board.innerHTML = '';
+
+    const playerEl = document.createElement('div');
+    playerEl.className = 'player';
+    playerEl.id = 'playerMarker';
+    playerEl.innerText = 'A';
+
+    itemsData.forEach((item, index) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.id = `cell-${index}`;
+      if (index === 0) cell.classList.add('start');
+      if (index === 63) cell.classList.add('end');
+
+      cell.onclick = () => onCellClick(index);
+
+      const num = document.createElement('span');
+      num.className = 'cell-num';
+      num.innerText = index + 1;
+
+      const icon = document.createElement('span');
+      icon.className = 'item-icon';
+      icon.innerText = item.icon;
+
+      const name = document.createElement('span');
+      name.className = 'item-name';
+      name.innerText = item.name;
+
+      cell.appendChild(num);
+      cell.appendChild(icon);
+      cell.appendChild(name);
+
+      if (item.cat > 0) {
+        const badge = document.createElement('span');
+        badge.className = `badge ${categories[item.cat].class}`;
+        badge.innerText = `RM${categories[item.cat].price}`;
+        cell.appendChild(badge);
+      }
+
+      board.appendChild(cell);
+    });
+
+    board.appendChild(playerEl);
+    updateGameUI();
+  }
+
+  function getValidMoves(pos) {
+    const validMoves = [];
+    const row = Math.floor(pos / 8);
+    const col = pos % 8;
+
+    for (let r = -1; r <= 1; r++) {
+      for (let c = -1; c <= 1; c++) {
+        if (r === 0 && c === 0) continue;
+        const newRow = row + r;
+        const newCol = col + c;
+
+        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+          validMoves.push(newRow * 8 + newCol);
+        }
+      }
+    }
+    return validMoves;
+  }
+
+  function onCellClick(targetIndex) {
+    const validMoves = getValidMoves(currentPos);
+
+    if (validMoves.includes(targetIndex)) {
+      currentPos = targetIndex;
+      visitedCells.add(targetIndex);
+      processCellLanding(currentPos);
+      updateGameUI();
+    }
+  }
+
+  function processCellLanding(index) {
+    const item = itemsData[index];
+    if (item.cat === 0) {
+      if (index === 63) checkWinCondition();
+      return;
+    }
+
+    const catInfo = categories[item.cat];
+    const itemPrice = catInfo.price;
+
+    if (remainingBudget >= itemPrice) {
+      remainingBudget -= itemPrice;
+      purchasedItems.push({ name: item.name, price: itemPrice, cat: item.cat });
+
+      if (targetRequirements[item.cat]) {
+        targetRequirements[item.cat].current += 1;
+      }
+    } else {
+      alert(`Remaining RM${remainingBudget} is not enough to buy ${item.name} (RM${itemPrice})!`);
+    }
+
+    if (index === 63) {
+      checkWinCondition();
+    }
+  }
+
+  function updateGameUI() {
+    const targetCell = document.getElementById(`cell-${currentPos}`);
+    const playerEl = document.getElementById('playerMarker');
+    playerEl.style.left = `${targetCell.offsetLeft + 38}px`;
+    playerEl.style.top = `${targetCell.offsetTop + 6}px`;
+
+    const validMoves = getValidMoves(currentPos);
+    itemsData.forEach((_, idx) => {
+      const cell = document.getElementById(`cell-${idx}`);
+      cell.classList.remove('valid-move');
+      if (visitedCells.has(idx)) {
+        cell.classList.add('visited');
+      }
+      if (validMoves.includes(idx)) {
+        cell.classList.add('valid-move');
+      }
+    });
+
+    updateChecklistUI();
+    updateCartUI();
+  }
+
+  function updateChecklistUI() {
+    const container = document.getElementById('targetChecklist');
+    container.innerHTML = '';
+
+    for (const [catId, data] of Object.entries(targetRequirements)) {
+      const catName = categories[catId].name;
+      const isDone = data.current >= data.req;
+      const div = document.createElement('div');
+      if (isDone) div.className = 'done';
+      div.innerText = `${isDone ? '✔' : '✖'} ${catName}: ${data.current}/${data.req}`;
+      container.appendChild(div);
+    }
+
+    document.getElementById('budget').innerText = `RM${remainingBudget}`;
+    document.getElementById('itemCount').innerText = purchasedItems.length;
+  }
+
+  function updateCartUI() {
+    const cartList = document.getElementById('cartList');
+    cartList.innerHTML = '';
+    if (purchasedItems.length === 0) {
+      cartList.innerHTML = '<li style="color:#999; text-align:center;">No items purchased yet.</li>';
+      return;
+    }
+    purchasedItems.forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${item.name}</span> <strong>RM${item.price}</strong>`;
+      cartList.appendChild(li);
+    });
+  }
+
+  function checkWinCondition() {
+    let allTargetsMet = true;
+    for (const catId in targetRequirements) {
+      if (targetRequirements[catId].current < targetRequirements[catId].req) {
+        allTargetsMet = false;
+        break;
+      }
+    }
+
+    if (allTargetsMet && remainingBudget === 0) {
+      alert("🎉 CONGRATULATIONS! Aniq Zairi successfully spent exactly RM1,000 at IOI City Mall according to all assignment requirements!");
+    } else {
+      alert(`Reached the End Square!\n• Remaining RM: ${remainingBudget}\n• Category Requirements Met: ${allTargetsMet ? 'Yes' : 'Not yet'}\n\nYou can click 'Reset Game' to try a new route.`);
+    }
+  }
+
+  function resetGame() {
+    currentPos = 0;
+    remainingBudget = 1000;
+    purchasedItems = [];
+    visitedCells = new Set([0]);
+    for (const catId in targetRequirements) {
+      targetRequirements[catId].current = 0;
+    }
+    initBoard();
+  }
+
+  window.onload = initBoard;
+</script>
+</body>
+</html>
